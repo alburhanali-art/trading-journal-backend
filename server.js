@@ -6,33 +6,26 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-// AI endpoint
 app.post("/analyze", async (req, res) => {
-  const { tradeData } = req.body;
-
   try {
-    const completion = await client.chat.completions.create({
+    const { tradeData } = req.body;
+
+    const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        {
-          role: "system",
-          content: "You are an expert trading coach. Analyze the user's trade and give insights."
-        },
-        {
-          role: "user",
-          content: tradeData
-        }
-      ]
+        { role: "system", content: "You are a trading psychology assistant." },
+        { role: "user", content: tradeData },
+      ],
     });
 
     res.json({ result: completion.choices[0].message.content });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "AI request failed" });
+    res.status(500).json({ error: "Failed to analyze trade." });
   }
 });
 
