@@ -32,4 +32,4 @@ app.post("/analyze", async (req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`AI server running on port ${PORT}`);
-});
+}); 
