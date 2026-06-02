@@ -12,14 +12,20 @@ const openai = new OpenAI({
 
 app.post("/analyze", async (req, res) => {
   try {
-    const { tradeData } = req.body;
+    const { tradeData, language } = req.body;
+
+    const systemPrompt = {
+      id: "Kamu adalah asisten psikologi trading. Jawablah dalam Bahasa Indonesia.",
+      en: "You are a trading psychology assistant. Answer in English.",
+      de: "Du bist ein Trading-Psychologie-Assistent. Antworte auf Deutsch."
+    }[language || "en"]; // default to English
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "You are a trading psychology assistant." },
-        { role: "user", content: tradeData },
-      ],
+        { role: "system", content: systemPrompt },
+        { role: "user", content: tradeData }
+      ]
     });
 
     res.json({ result: completion.choices[0].message.content });
@@ -28,7 +34,6 @@ app.post("/analyze", async (req, res) => {
     res.status(500).json({ error: "Failed to analyze trade." });
   }
 });
-
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`AI server running on port ${PORT}`);
