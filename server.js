@@ -1,11 +1,20 @@
 import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
+import pkg from "pg";
+
+const { Pool } = pkg;
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+// DATABASE CONNECTION
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// OPENAI CLIENT
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -179,10 +188,21 @@ Perbaikan:
   }
 };
 
+// SAVE PSYCHOLOGY OUTPUT (Phase 1)
+async function savePsychology(userId, tradeId, aiText) {
+  await pool.query(
+    `
+    INSERT INTO ai_psychology (user_id, trade_id, raw_output)
+    VALUES ($1, $2, $3)
+    `,
+    [userId, tradeId, aiText]
+  );
+}
+
 // MAIN ENDPOINT
 app.post("/analyze", async (req, res) => {
   try {
-    const { tradeData, language, type } = req.body;
+    const { tradeData, language, type, userId, tradeId } = req.body;
 
     // Default type = psychology
     const promptType = PROMPTS[type] ? type : "psychology";
@@ -221,10 +241,17 @@ app.post("/analyze", async (req, res) => {
       ]
     });
 
+    const aiText = completion.choices[0].message.content;
+
+    // SAVE TO DATABASE (Phase 1: psychology only)
+    if (promptType === "psychology") {
+      await savePsychology(userId, tradeId, aiText);
+    }
+
     res.json({
       type: promptType,
       language: targetLang,
-      result: completion.choices[0].message.content
+      result: aiText
     });
 
   } catch (error) {
