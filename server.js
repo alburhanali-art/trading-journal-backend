@@ -264,7 +264,9 @@ app.post("/analyze", async (req, res) => {
   }
 });
 
-// START SERVER
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
+// START SERVER (Railway + Local Friendly)
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
