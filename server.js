@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import pkg from "pg";
-import crypto from "crypto";
 
 const { Pool } = pkg;
 
@@ -189,14 +188,14 @@ Perbaikan:
   }
 };
 
-// SAVE PSYCHOLOGY OUTPUT
-async function savePsychology(userId, tradeId, aiText) {
+// SAVE OUTPUT FOR ALL MODES
+async function saveAIOutput(userId, tradeId, mode, aiText) {
   await pool.query(
     `
-    INSERT INTO ai_psychology (user_id, trade_id, raw_output)
-    VALUES ($1, $2, $3)
+    INSERT INTO ai_outputs (user_id, trade_id, mode, raw_output)
+    VALUES ($1, $2, $3, $4)
     `,
-    [userId, tradeId, aiText]
+    [userId, tradeId, mode, aiText]
   );
 }
 
@@ -244,4 +243,28 @@ app.post("/analyze", async (req, res) => {
 
     const aiText = completion.choices[0].message.content;
 
-    // FALLBACK
+    // SAVE FOR ALL MODES
+    try {
+      await saveAIOutput(userId, tradeId, promptType, aiText);
+    } catch (err) {
+      console.error("DB save error:", err);
+    }
+
+    // SEND RESPONSE
+    res.json({
+      success: true,
+      type: promptType,
+      language: targetLang,
+      aiText
+    });
+
+  } catch (err) {
+    console.error("Error in /analyze:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// START SERVER
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});
