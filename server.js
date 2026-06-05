@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import pkg from "pg";
+import crypto from "crypto";
 
 const { Pool } = pkg;
 
@@ -188,7 +189,7 @@ Perbaikan:
   }
 };
 
-// SAVE PSYCHOLOGY OUTPUT (Phase 1)
+// SAVE PSYCHOLOGY OUTPUT
 async function savePsychology(userId, tradeId, aiText) {
   await pool.query(
     `
@@ -243,24 +244,4 @@ app.post("/analyze", async (req, res) => {
 
     const aiText = completion.choices[0].message.content;
 
-    // SAVE TO DATABASE (Phase 1: psychology only)
-    if (promptType === "psychology") {
-      await savePsychology(userId, tradeId, aiText);
-    }
-
-    res.json({
-      type: promptType,
-      language: targetLang,
-      result: aiText
-    });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Failed to analyze trade." });
-  }
-});
-
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`AI server running on port ${PORT}`);
-});
+    // FALLBACK
